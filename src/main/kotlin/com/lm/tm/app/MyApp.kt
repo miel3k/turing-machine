@@ -1,6 +1,6 @@
-package com.example.demo.app
+package com.lm.tm.app
 
-import com.example.demo.view.MainView
+import com.lm.tm.view.MainView
 import tornadofx.App
 
 class MyApp: App(MainView::class, Styles::class)

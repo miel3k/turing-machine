@@ -1,6 +1,6 @@
 package com.lm.tm
 
-class TM(
+class TuringMachine(
     val tape: MutableList<String> = mutableListOf(),
     var currentIndex: Int,
     private val transitionTable: Map<String, Map<String, Triple<String, String, String>>>,

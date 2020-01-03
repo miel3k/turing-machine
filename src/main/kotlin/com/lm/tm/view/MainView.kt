@@ -9,47 +9,32 @@ import tornadofx.*
 class MainView : View("TM") {
 
     private val mainController: MainController by inject()
-
-    private var entryListView: ListView<String> by singleAssign()
+    private var tapeListView: ListView<String> by singleAssign()
     private var inputTextField: TextField by singleAssign()
-    private var textArea: TextArea by singleAssign()
-
-    fun select(index: Int) {
-        entryListView.selectionModel.select(index)
-    }
+    private var pathTextArea: TextArea by singleAssign()
 
     override val root = vbox {
         hbox {
             button {
-                text = "Load tt"
+                text = "Load Transition Table"
                 setOnMouseClicked {
                     mainController.loadTransitionTable()
                 }
             }
             textfield {
                 inputTextField = this
-                textFormatter = object : TextFormatter<String>({
-                    val newText = it.text
-                    when {
-                        newText.isEmpty() -> it
-                        !(newText.contains("a") || newText.contains("b")) -> {
-                            null
-                        }
-                        else -> {
-                            it
-                        }
-                    }
-                }) {}
+                textFormatter = getAlphabetTextFormatter()
             }
             button {
                 text = "Start processing"
                 setOnMouseClicked {
-                    mainController.startProcessing(inputTextField.text.chunked(1))
+                    val newInput = inputTextField.text.chunked(1)
+                    mainController.startProcessing(newInput)
                 }
             }
         }
-        listview(mainController.entries) {
-            entryListView = this
+        listview(mainController.observableTape) {
+            tapeListView = this
             selectionModel.selectionMode = SelectionMode.SINGLE
             orientation = Orientation.HORIZONTAL
             isMouseTransparent = true
@@ -65,12 +50,24 @@ class MainView : View("TM") {
             }
         }
         textarea {
-            textArea = this
-            text = ""
+            pathTextArea = this
         }
     }
 
+    private fun getAlphabetTextFormatter() = object : TextFormatter<String>({
+        val newText = it.text
+        when {
+            newText.isEmpty() -> it
+            !(newText.contains("a") || newText.contains("b")) -> null
+            else -> it
+        }
+    }) {}
+
+    fun selectTapeElement(index: Int) {
+        tapeListView.selectionModel.select(index)
+    }
+
     fun showPath(pathString: String) {
-        textArea.text = pathString
+        pathTextArea.text = pathString
     }
 }

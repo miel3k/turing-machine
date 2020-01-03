@@ -1,6 +1,6 @@
 package com.lm.tm.controller
 
-import com.lm.tm.TM
+import com.lm.tm.TuringMachine
 import com.lm.tm.WindowUtils
 import com.lm.tm.view.MainView
 import tornadofx.*
@@ -9,46 +9,39 @@ import java.io.File
 class MainController : Controller() {
 
     private val mainView: MainView by inject()
-    private lateinit var tm: TM
-    private lateinit var tt: Map<String, Map<String, Triple<String, String, String>>>
-
-    val entries = listOf<String>().toObservable()
-
-    private var selectedEntryIndex = 0
+    private lateinit var turingMachine: TuringMachine
+    private lateinit var transitionTable: Map<String, Map<String, Triple<String, String, String>>>
+    val observableTape = listOf<String>().toObservable()
 
     fun processNextSymbol() {
-        tm.processNextSymbol()
-        if (tm.finished) {
-            mainView.showPath(getPathString(tm.path))
-        } else {
-            entries.clear()
-            entries.addAll(tm.tape)
-            selectedEntryIndex = tm.currentIndex
-            mainView.select(selectedEntryIndex)
+        turingMachine.processNextSymbol()
+        mainView.showPath(getPathString(turingMachine.path))
+        if (!turingMachine.finished) {
+            observableTape.clear()
+            observableTape.addAll(turingMachine.tape)
+            mainView.selectTapeElement(turingMachine.currentIndex)
         }
     }
 
-    fun startProcessing(newEntries: List<String>) {
-        entries.clear()
-        entries.addAll(newEntries)
-        val startIndex = if (tt.any {
-                it.value.any {
-                    it.value.third == "R"
-                }
-            }) {
-            0
-        } else {
-            newEntries.size - 1
-        }
-        tm = TM(newEntries.toMutableList(), startIndex, tt, "q0")
-        selectedEntryIndex = startIndex
-        mainView.select(selectedEntryIndex)
+    fun startProcessing(input: List<String>) {
+        val tape = input.toTape().toMutableList()
+        observableTape.clear()
+        observableTape.addAll(tape)
+        val startIndex =
+            if (isTuringMachineRightOriented()) 1 else tape.size - 2
+        val startState = transitionTable.keys.first()
+        turingMachine =
+            TuringMachine(tape, startIndex, transitionTable, startState)
+        mainView.selectTapeElement(startIndex)
     }
 
-    private fun getEntriesWithEmptyChars(entries: List<String>): List<String> {
+    private fun isTuringMachineRightOriented() =
+        transitionTable.any { tt -> tt.value.any { it.value.third == "R" } }
+
+    private fun List<String>.toTape(): List<String> {
         val list = mutableListOf<String>()
         list.add("-")
-        list.addAll(entries)
+        list.addAll(this)
         list.add("-")
         return list
     }
@@ -59,7 +52,8 @@ class MainController : Controller() {
 
     fun loadTransitionTable() {
         val file = WindowUtils.createLoadPathPicker()
-        tt = readTransitionTableFromFile(file.path, listOf("a", "b", "-"))
+        val alphabet = listOf("a", "b", "-") //TODO read alphabet from file
+        transitionTable = readTransitionTableFromFile(file.path, alphabet)
     }
 
     private fun readTransitionTableFromFile(

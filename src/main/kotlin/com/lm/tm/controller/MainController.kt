@@ -40,6 +40,7 @@ class MainController : Controller() {
         turingMachine =
             TuringMachine(transitionTable, startState, tape, startIndex)
         mainView.selectTapeElement(startIndex)
+        mainView.clearTextArea()
     }
 
     private fun isTuringMachineRightOriented() =

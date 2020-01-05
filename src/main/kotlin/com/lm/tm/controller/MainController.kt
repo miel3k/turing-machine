@@ -1,5 +1,6 @@
 package com.lm.tm.controller
 
+import com.lm.tm.Transition
 import com.lm.tm.TuringMachine
 import com.lm.tm.WindowUtils
 import com.lm.tm.view.MainView
@@ -10,7 +11,7 @@ class MainController : Controller() {
 
     private val mainView: MainView by inject()
     private lateinit var turingMachine: TuringMachine
-    private lateinit var transitionTable: Map<String, Map<String, Triple<String, String, String>>>
+    private lateinit var transitionTable: Map<String, Map<String, Transition>>
     val observableTape = listOf<String>().toObservable()
 
     fun processNextSymbol() {
@@ -31,12 +32,12 @@ class MainController : Controller() {
             if (isTuringMachineRightOriented()) 1 else tape.size - 2
         val startState = transitionTable.keys.first()
         turingMachine =
-            TuringMachine(tape, startIndex, transitionTable, startState)
+            TuringMachine(transitionTable, startState, tape, startIndex)
         mainView.selectTapeElement(startIndex)
     }
 
     private fun isTuringMachineRightOriented() =
-        transitionTable.any { tt -> tt.value.any { it.value.third == "R" } }
+        transitionTable.any { tt -> tt.value.any { it.value.direction == "R" } }
 
     private fun List<String>.toTape(): List<String> {
         val list = mutableListOf<String>()
@@ -61,20 +62,23 @@ class MainController : Controller() {
         alphabet: List<String>,
         stateDelimiter: String = ",",
         statesDelimiter: String = "#"
-    ): Map<String, Map<String, Triple<String, String, String>>> {
+    ): Map<String, Map<String, Transition>> {
         val transitionTable =
-            mutableMapOf<String, Map<String, Triple<String, String, String>>>()
+            mutableMapOf<String, Map<String, Transition>>()
         File(path).inputStream().bufferedReader().useLines { lines ->
             lines.forEach {
                 val states = it.split(stateDelimiter)
                 val inState = states.first()
                 val transitionMap =
-                    states.drop(1).mapIndexed { index, outState ->
-                        val outList = outState.split(statesDelimiter)
-                        Pair(
-                            alphabet[index],
-                            Triple(outList[0], outList[1], outList[2])
-                        )
+                    states.drop(1).mapIndexed { index, transitionParameters ->
+                        val transitionList =
+                            transitionParameters.split(statesDelimiter)
+                        val nextState = transitionList[0]
+                        val symbol = transitionList[1]
+                        val direction = transitionList[2]
+                        val transition =
+                            Transition(nextState, symbol, direction)
+                        Pair(alphabet[index], transition)
                     }.toMap()
                 transitionTable[inState] = transitionMap
             }

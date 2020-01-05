@@ -11,8 +11,14 @@ class MainController : Controller() {
 
     private val mainView: MainView by inject()
     private lateinit var turingMachine: TuringMachine
-    private lateinit var transitionTable: Map<String, Map<String, Transition>>
+    private var alphabet: List<String>
+    private var transitionTable: Map<String, Map<String, Transition>>
     val observableTape = listOf<String>().toObservable()
+
+    init {
+        alphabet = readTextFromFile("data/alphabet.txt")
+        transitionTable = readTransitionTableFromFile("data/tt.txt", alphabet)
+    }
 
     fun processNextSymbol() {
         turingMachine.processNextSymbol()
@@ -51,11 +57,21 @@ class MainController : Controller() {
         return path.joinToString(" -> ")
     }
 
+    fun loadAlphabet() {
+        val file = WindowUtils.createLoadPathPicker()
+        alphabet = readTextFromFile(file.path)
+        mainView.setTextFormatter(alphabet)
+    }
+
     fun loadTransitionTable() {
         val file = WindowUtils.createLoadPathPicker()
-        val alphabet = listOf("a", "b", "-") //TODO read alphabet from file
         transitionTable = readTransitionTableFromFile(file.path, alphabet)
     }
+
+    private fun readTextFromFile(path: String, delimiter: String = "#") =
+        File(path).inputStream().bufferedReader().use {
+            it.readText().split(delimiter)
+        }
 
     private fun readTransitionTableFromFile(
         path: String,

@@ -42,7 +42,7 @@ class MainView : View("Turing Machine") {
                 prefWidth = 200.0
                 text = "LOAD ALPHABET"
                 setOnMouseClicked {
-
+                    mainController.loadAlphabet()
                 }
             }
         }
@@ -57,12 +57,12 @@ class MainView : View("Turing Machine") {
                 text = "Input"
             }
             textfield {
+                inputTextField = this
                 hboxConstraints {
                     margin = Insets(25.0, 0.0, 25.0, 10.0)
                 }
+                textFormatter = getAlphabetTextFormatter(listOf("a", "b", "-"))
                 prefWidth = 300.0
-                inputTextField = this
-                textFormatter = getAlphabetTextFormatter()
             }
         }
         button {
@@ -112,14 +112,15 @@ class MainView : View("Turing Machine") {
         }
     }
 
-    private fun getAlphabetTextFormatter() = object : TextFormatter<String>({
-        val newText = it.text
-        when {
-            newText.isEmpty() -> it
-            !(newText.contains("a") || newText.contains("b")) -> null
-            else -> it
-        }
-    }) {}
+    private fun getAlphabetTextFormatter(alphabet: List<String>) =
+        object : TextFormatter<String>({
+            val newText = it.text
+            when {
+                newText.isEmpty() -> it
+                !alphabet.any { a -> newText.contains(a) } -> null
+                else -> it
+            }
+        }) {}
 
     fun selectTapeElement(index: Int) {
         tapeListView.selectionModel.select(index)
@@ -127,5 +128,13 @@ class MainView : View("Turing Machine") {
 
     fun showPath(pathString: String) {
         pathTextArea.text = pathString
+    }
+
+    fun setTextFormatter(alphabet: List<String>) {
+        inputTextField.textFormatter = getAlphabetTextFormatter(alphabet)
+    }
+
+    fun clearTextArea() {
+        pathTextArea.clear()
     }
 }
